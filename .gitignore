@@ -1,0 +1,15 @@
+# Backend
+chat-backend/venv/
+chat-backend/__pycache__/
+chat-backend/*.pyc
+chat-backend/.env
+chat-backend/generated_pdfs/
+
+# Frontend
+chat-frontend/node_modules/
+
+# Editor
+.vscode/
+
+# OS
+.DS_Store
