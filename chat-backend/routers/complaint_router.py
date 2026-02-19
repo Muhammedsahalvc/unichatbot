@@ -15,23 +15,33 @@ from utils.pdf_generator import generate_complaint_pdf
 from datetime import datetime
 
 
-from groq import Groq
+
 from datetime import datetime
 from config.email_config import mail_config
 from fastapi_mail import FastMail, MessageSchema
 from pathlib import Path
 
 from fastapi.responses import FileResponse
-import os
+
 
 from config.constants import  CALICUT_UNIVERSITY_EMAIL
 
 
 
 # Initialize Groq client
+from groq import Groq
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+if not GROQ_API_KEY:
+    raise ValueError("GROQ_API_KEY not found in environment variables")
+
+client = Groq(api_key=GROQ_API_KEY)
+
 
 
 router = APIRouter(prefix="/complaints", tags=["Complaints"])

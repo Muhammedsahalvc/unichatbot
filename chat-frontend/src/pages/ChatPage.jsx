@@ -37,6 +37,15 @@ const styles = {
     boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
   },
 
+  badge: {
+    marginTop: "8px",
+    fontSize: "12px",
+    padding: "4px 8px",
+    borderRadius: "6px",
+    display: "inline-block",
+    fontWeight: "500",
+  },
+
   inputArea: {
     display: "flex",
     marginTop: "12px",
@@ -91,12 +100,10 @@ function ChatPage() {
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  // 🔹 Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 🔹 Load history
   useEffect(() => {
     const loadHistory = async () => {
       try {
@@ -114,15 +121,11 @@ function ChatPage() {
     loadHistory();
   }, []);
 
-  // 🎤 Setup Speech Recognition
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
-      console.warn("Speech recognition not supported in this browser.");
-      return;
-    }
+    if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
@@ -133,9 +136,7 @@ function ChatPage() {
       setInput(transcript);
     };
 
-    recognition.onend = () => {
-      setListening(false);
-    };
+    recognition.onend = () => setListening(false);
 
     recognitionRef.current = recognition;
   }, []);
@@ -152,7 +153,6 @@ function ChatPage() {
     }
   };
 
-  // 🔹 Send message
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -183,12 +183,54 @@ function ChatPage() {
           sender: "bot",
           text: "I couldn’t answer this right now.",
           source: "system",
-          documents: [],
         },
       ]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getBadge = (source) => {
+    if (source === "kb")
+      return (
+        <span
+          style={{
+            ...styles.badge,
+            background: "#dbeafe",
+            color: "#1e3a8a",
+          }}
+        >
+          📘 From University Regulations
+        </span>
+      );
+
+    if (source === "kb_partial")
+      return (
+        <span
+          style={{
+            ...styles.badge,
+            background: "#fef3c7",
+            color: "#92400e",
+          }}
+        >
+          📙 Partial University Reference
+        </span>
+      );
+
+    if (source === "general")
+      return (
+        <span
+          style={{
+            ...styles.badge,
+            background: "#e5e7eb",
+            color: "#374151",
+          }}
+        >
+          ⚠ General AI Response
+        </span>
+      );
+
+    return null;
   };
 
   return (
@@ -208,6 +250,35 @@ function ChatPage() {
             }}
           >
             <ReactMarkdown>{msg.text}</ReactMarkdown>
+
+{msg.sender === "bot" && (
+  <>
+    {getBadge(msg.source)}
+
+    {/* Show PDF Sources */}
+    {msg.documents && msg.documents.length > 0 && (
+      <div style={{ marginTop: "6px", fontSize: "12px" }}>
+        {msg.documents.map((doc, i) => (
+          <div key={i}>
+            📄{" "}
+            <a
+              href={doc}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "#1e3a8a",
+                textDecoration: "underline",
+              }}
+            >
+              View Source Document
+            </a>
+          </div>
+        ))}
+      </div>
+    )}
+  </>
+)}
+
           </div>
         ))}
 
@@ -220,7 +291,6 @@ function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
       <div style={styles.inputArea}>
         <input
           style={styles.input}
