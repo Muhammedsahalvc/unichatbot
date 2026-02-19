@@ -5,8 +5,8 @@ chat-backend/*.pyc
 chat-backend/.env
 chat-backend/generated_pdfs/
 
-# Frontend
-chat-frontend/node_modules/
+# Frontend and base
+node_modules/
 
 # Editor
 .vscode/

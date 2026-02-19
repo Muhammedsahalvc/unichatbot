@@ -1,33 +1,40 @@
+import { useState, useRef, useEffect } from "react";
+import axiosInstance from "../api/axiosInstance";
+import ReactMarkdown from "react-markdown";
+
 const styles = {
   container: {
-    maxWidth: "900px",
-    margin: "0 auto",
+    maxWidth: "960px",
+    margin: "40px auto",
     display: "flex",
     flexDirection: "column",
     height: "85vh",
-    background: "#f8fafc",
-    padding: "10px",
+    background: "#ffffff",
+    padding: "24px",
+    borderRadius: "12px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
   },
 
   chatBox: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    gap: "12px",
-    padding: "16px",
+    gap: "16px",
+    padding: "20px",
     border: "1px solid #e5e7eb",
-    borderRadius: "8px",
+    borderRadius: "10px",
     overflowY: "auto",
     background: "#ffffff",
   },
 
   message: {
-    maxWidth: "70%",
-    padding: "10px 12px",
+    maxWidth: "100%",
+    padding: "14px 16px",
     borderRadius: "10px",
-    color: "#1f2937",
-    lineHeight: "1.5",
+    border: "1px solid #e5e7eb",
+    lineHeight: "1.7",
     fontSize: "14px",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
   },
 
   inputArea: {
@@ -38,80 +45,145 @@ const styles = {
 
   input: {
     flex: 1,
-    padding: "10px",
-    borderRadius: "6px",
+    padding: "12px",
+    borderRadius: "8px",
     border: "1px solid #d1d5db",
     fontSize: "14px",
+    outline: "none",
   },
 
   sendBtn: {
-    padding: "10px 18px",
+    padding: "12px 20px",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "8px",
     background: "#1e3a8a",
     color: "#ffffff",
     cursor: "pointer",
     fontWeight: "500",
   },
+
+  micBtn: {
+    padding: "12px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#111827",
+    color: "#ffffff",
+    cursor: "pointer",
+    fontWeight: "500",
+  },
+
+  header: {
+    fontSize: "20px",
+    fontWeight: "600",
+    color: "#1e3a8a",
+    marginBottom: "16px",
+    borderBottom: "1px solid #e5e7eb",
+    paddingBottom: "10px",
+  },
 };
 
-
-import { useState, useRef, useEffect } from "react";
-import axiosInstance from "../api/axiosInstance";
-
 function ChatPage() {
-  const [messages, setMessages] = useState([
-    {
-      sender: "bot",
-      text: "Hello 👋 I am UniGuide AI. How can I help you today?",
-      source: "system",
-    },
-  ]);
-
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [listening, setListening] = useState(false);
 
   const messagesEndRef = useRef(null);
+  const recognitionRef = useRef(null);
 
-  // Auto-scroll to bottom
+  // 🔹 Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // 🔹 Load history
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const res = await axiosInstance.get("/chat/history?offset=0");
+        const formatted = res.data.history.map((msg) => ({
+          sender: msg.role === "user" ? "user" : "bot",
+          text: msg.message,
+          source: msg.source,
+        }));
+        setMessages(formatted);
+      } catch (err) {
+        console.error("Failed to load chat history", err);
+      }
+    };
+    loadHistory();
+  }, []);
+
+  // 🎤 Setup Speech Recognition
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      console.warn("Speech recognition not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+
+    recognitionRef.current = recognition;
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
+
+    if (listening) {
+      recognitionRef.current.stop();
+      setListening(false);
+    } else {
+      recognitionRef.current.start();
+      setListening(true);
+    }
+  };
+
+  // 🔹 Send message
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // 1️⃣ Add user message to UI
-    const userMessage = { sender: "user", text: input };
-    setMessages((prev) => [...prev, userMessage]);
-
     const question = input;
+
+    setMessages((prev) => [...prev, { sender: "user", text: question }]);
     setInput("");
     setLoading(true);
 
     try {
-      // 2️⃣ Call backend chat API
       const res = await axiosInstance.post("/chat/ask", {
-        message: question,   // MUST be "message"
+        message: question,
       });
 
-      // 3️⃣ Add bot reply from backend
       setMessages((prev) => [
         ...prev,
         {
           sender: "bot",
           text: res.data.reply,
           source: res.data.source,
+          documents: res.data.documents || [],
         },
       ]);
     } catch (err) {
-      console.error("Chat error:", err);
       setMessages((prev) => [
         ...prev,
         {
           sender: "bot",
-          text: "Sorry, I couldn't process your request.",
+          text: "I couldn’t answer this right now.",
           source: "system",
+          documents: [],
         },
       ]);
     } finally {
@@ -119,40 +191,29 @@ function ChatPage() {
     }
   };
 
-
   return (
     <div style={styles.container}>
-      <h2>💬 UniGuide Chat</h2>
+      <div style={styles.header}>
+        UniGuide AI – Student Academic Assistant
+      </div>
 
-      {/* Chat Window */}
       <div style={styles.chatBox}>
         {messages.map((msg, index) => (
           <div
             key={index}
             style={{
               ...styles.message,
-              alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
-              background:
-                msg.sender === "user" ? "#DCF8C6" : "#F1F0F0",
+              marginLeft: msg.sender === "user" ? "auto" : "0",
+              background: msg.sender === "user" ? "#dbeafe" : "#f8fafc",
             }}
           >
-            <p style={{ margin: 0 }}>{msg.text}</p>
-
-            {msg.source && msg.sender === "bot" && (
-              <small style={{ fontSize: "10px", color: "#666" }}>
-                {msg.source === "kb"
-                  ? "From University Rules"
-                  : msg.source === "ai"
-                    ? "AI Generated"
-                    : ""}
-              </small>
-            )}
+            <ReactMarkdown>{msg.text}</ReactMarkdown>
           </div>
         ))}
 
         {loading && (
           <div style={{ fontStyle: "italic", color: "#666" }}>
-            UniGuide AI is typing...
+            UniGuide AI is preparing an answer...
           </div>
         )}
 
@@ -168,6 +229,10 @@ function ChatPage() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
+
+        <button style={styles.micBtn} onClick={toggleListening}>
+          {listening ? "🎙 Listening..." : "🎤"}
+        </button>
 
         <button style={styles.sendBtn} onClick={sendMessage}>
           Send

@@ -33,7 +33,7 @@ function Login() {
         <input
           style={styles.input}
           type="email"
-          placeholder="University Email"
+          placeholder="User Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
