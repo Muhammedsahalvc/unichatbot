@@ -31,6 +31,8 @@ function ComplaintsList() {
         <button
           style={styles.newBtn}
           onClick={() => navigate("/dashboard/complaints/new")}
+          onMouseOver={(e) => (e.target.style.background = "#1d4ed8")}
+          onMouseOut={(e) => (e.target.style.background = "#2563eb")}
         >
           + New Complaint
         </button>
@@ -41,42 +43,42 @@ function ComplaintsList() {
       ) : (
         <div style={styles.cardGrid}>
           {complaints.map((c) => (
-  <div key={c.id} style={styles.card}>
-    
-    {/* Header row */}
-    <div style={styles.cardHeader}>
-      <h3 style={styles.title}>
-        {c.title || "Untitled Complaint"}
-      </h3>
+            <div key={c.id} style={styles.card}>
 
-      <span style={styles.statusBadge(c.status)}>
-        {c.status}
-      </span>
-    </div>
+              {/* Header row */}
+              <div style={styles.cardHeader}>
+                <h3 style={styles.title}>
+                  {c.title || "Untitled Complaint"}
+                </h3>
 
-    {/* Description preview */}
-    <p style={styles.preview}>
-      {c.description
-        ? c.description.slice(0, 80) + "..."
-        : "No description provided"}
-    </p>
+                <span style={styles.statusBadge(c.status)}>
+                  {c.status}
+                </span>
+              </div>
 
-    {/* Meta info */}
-    <div style={styles.meta}>
-      <span>Category: <strong>{c.category}</strong></span>
-      <span>🕒 Updated {timeAgo(c.submitted_at || c.created_at)}</span>
-    </div>
+              {/* Description preview */}
+              <p style={styles.preview}>
+                {c.description
+                  ? c.description.slice(0, 80) + "..."
+                  : "No description provided"}
+              </p>
 
-    {/* Action */}
-    <button
-      style={styles.viewBtn}
-      onClick={() => navigate(`/dashboard/complaints/${c.id}`)}
-    >
-      View Complaint
-    </button>
+              {/* Meta info */}
+              <div style={styles.meta}>
+                <span>Category: <strong>{c.category}</strong></span>
+                <span>🕒 Updated {timeAgo(c.submitted_at || c.created_at)}</span>
+              </div>
 
-  </div>
-))}
+              {/* Action */}
+              <button
+                style={styles.viewBtn}
+                onClick={() => navigate(`/dashboard/complaints/${c.id}`)}
+              >
+                View Complaint
+              </button>
+
+            </div>
+          ))}
 
         </div>
       )}
@@ -165,6 +167,18 @@ const styles = {
     color: "#fff",
     cursor: "pointer",
     fontWeight: "500",
+  },
+
+  newBtn: {
+    padding: "10px 16px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#2563eb",   // same blue as viewBtn
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: "600",
+    fontSize: "14px",
+    transition: "all 0.2s ease",
   },
 
   statusBadge: (status) => {
