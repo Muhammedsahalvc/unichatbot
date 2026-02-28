@@ -2,7 +2,7 @@ from groq import Groq
 import os
 
 HIGH_CONFIDENCE = 0.6
-LOW_CONFIDENCE = 0.3
+LOW_CONFIDENCE = 0.35
 
 
 def get_groq_client():
